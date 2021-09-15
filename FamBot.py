@@ -15,10 +15,19 @@ TOKEN = os.getenv('TOKEN')
 client = commands.Bot(command_prefix='!')
 songQueue = []
 nowPlaying = 0
-songQueue
+nameQueue = []
+
+@client.command(name='list')
+async def ls(ctx):
+    global nameQueue
+    result = ""
+    for item in nameQueue:
+        result += "- " + item + "\n"
+    await ctx.send(result)
 
 @client.command(name='queue')
 async def queue(ctx, url : str):
+    # print("AAA")
     global songQueue
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -31,47 +40,45 @@ async def queue(ctx, url : str):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     for file in os.listdir("./"):
-        if not file.startswith("_"):
-            global nowPlaying
-            os.rename(file, "_song" + nowPlaying + ".mp3")
-            songQueue.append(str("_song" + nowPlaying + ".mp3"))
+        if (not file.startswith("_")) and file.endswith(".mp3"):
+            global nowPlaying, nameQueue
+            nameQueue.append(str(file).rpartition('-')[0])
+            os.rename(file, "_song" + str(nowPlaying) + ".mp3")
+            songQueue.append(str("_song" + str(nowPlaying) + ".mp3"))
             nowPlaying += 1
 
 
 @client.command(name='play')
-async def play(ctx, url : str):
-    song_there = os.path.isfile("song.mp3")
-    try:
-        if song_there:
-            os.remove("song.mp3")
-    except PermissionError:
-        await ctx.send("Wait for the current playing music to end or use the 'stop' command")
-        return
+async def play(ctx, url : str="null"):
+    global songQueue
+    if not url == "null":
+        await queue(ctx, url)
+    nextSong = songQueue[0]
+
+    song_there = os.path.isfile(nextSong)
 
     voiceChannel = discord.utils.get(ctx.guild.voice_channels, name='General')
     await voiceChannel.connect()
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    voice.play(discord.FFmpegPCMAudio("song.mp3"))
+    while(len(songQueue) > 0):
+        # print("going to play")
+        voice.play(discord.FFmpegPCMAudio(songQueue[0]), after=next)
+        while(voice.is_playing()):
+            pass
+        # print("song played")
+    await leave(ctx)
 
-@client.command(name='skip')
-async def skip(ctx):
-    nowPlaying = 9
+# @client.command(name='skip')
+# async def skip(ctx):
+#     nowPlaying = 9
 
-async def next(ctx):
+def next(err):
     global songQueue
-
     if(len(songQueue) == 0):
-        leave(ctx)
         return
+    # print(err)
     oldSong = songQueue.pop()
-    nextSong = songQueue[0]
-    song_there = os.path.isfile(nextSong)
-    if not song_there:
-        print("Error! No song to play now!")
-        return
-    
-    
-
+    os.remove(oldSong)
 
 @client.command()
 async def leave(ctx):

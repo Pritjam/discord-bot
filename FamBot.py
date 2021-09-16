@@ -1,9 +1,8 @@
 # bot.py
 import os
-import random
 import discord
-from discord.ext.commands.core import is_nsfw
 import youtube_dl
+import asyncio
 
 
 from discord.ext import commands
@@ -20,6 +19,9 @@ nameQueue = []
 @client.command(name='list')
 async def ls(ctx):
     global nameQueue
+    if(len(nameQueue) == 0):
+        await ctx.send("No songs to play!")
+        return
     result = ""
     for item in nameQueue:
         result += "- " + item + "\n"
@@ -62,22 +64,23 @@ async def play(ctx, url : str="null"):
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     while(len(songQueue) > 0):
         # print("going to play")
-        voice.play(discord.FFmpegPCMAudio(songQueue[0]), after=next)
-        while(voice.is_playing()):
-            pass
+        if not (voice.is_playing() or voice.is_paused()):
+            voice.play(discord.FFmpegPCMAudio(songQueue[0]), after=next)
+        await asyncio.sleep(5)
         # print("song played")
     await leave(ctx)
 
-# @client.command(name='skip')
-# async def skip(ctx):
-#     nowPlaying = 9
+@client.command(name='skip')
+async def skip(ctx):
+    await stop(ctx)
+
 
 def next(err):
     global songQueue
     if(len(songQueue) == 0):
         return
     # print(err)
-    oldSong = songQueue.pop()
+    oldSong = songQueue.pop(0)
     os.remove(oldSong)
 
 @client.command()
@@ -89,6 +92,10 @@ async def leave(ctx):
         await voice.disconnect()
     else:
         await ctx.send("The bot is not connected to a voice channel.")
+    for song in songQueue:
+        os.remove(song)
+    songQueue.clear()
+    nameQueue.clear()
 
 
 @client.command()
@@ -111,7 +118,9 @@ async def resume(ctx):
 
 @client.command()
 async def stop(ctx):
+    global songQueue, nameQueue
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     voice.stop()
+
 
 client.run(TOKEN)

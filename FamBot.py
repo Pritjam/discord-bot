@@ -30,6 +30,8 @@ async def ls(ctx):
 @client.command(name='queue')
 async def queue(ctx, url : str):
     # print("AAA")
+    if url.find("playlist") != -1:
+        return
     global songQueue
     ydl_opts = {
         'format': 'bestaudio/best',

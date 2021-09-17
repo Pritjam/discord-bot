@@ -138,5 +138,12 @@ async def resume(ctx):
     else:
         await ctx.send("The audio is not paused.")
 
+@client.command(name="shutdown", help="Shuts down the bot", hidden=True)
+@commands.has_role('Admin')
+async def shutdown(ctx):
+    await ctx.send("shutting down")
+    await leave(ctx)
+    exit()
+
 
 client.run(TOKEN)

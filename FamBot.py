@@ -43,13 +43,12 @@ async def ls(ctx):
 
 @client.command(name='queue', help="Add a song to the end of the queue")
 async def queue(ctx, url : str, pos : int=-1):
-    # can't handle playlists safely yet
-    if url.find("playlist") != -1:
-        return
     global songQueue
     index = len(songQueue) if pos == -1 else pos
     ydl_opts = {
         'format': 'bestaudio/best',
+        'noplaylist':'True',
+        'default_search':'ytsearch',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -112,8 +111,6 @@ async def leave(ctx):
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     if voice and voice.is_connected():
         await voice.disconnect()
-    else:
-        await ctx.send("The bot is not connected to a voice channel.")
     for song in songQueue:
         os.remove(song)
     songQueue.clear()
@@ -143,7 +140,7 @@ async def resume(ctx):
 async def shutdown(ctx):
     await ctx.send("shutting down")
     await leave(ctx)
-    exit()
+    exit(0)
 
 @client.event
 async def on_command_error(ctx, error):

@@ -43,6 +43,9 @@ async def ls(ctx):
 
 @client.command(name='queue', help="Add a song to the end of the queue")
 async def queue(ctx, url : str, pos : int=-1):
+    if(url.find("playlist") != -1):
+        await ctx.send("No playlist support!")
+        return
     global songQueue
     index = len(songQueue) if pos == -1 else pos
     ydl_opts = {

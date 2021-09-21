@@ -9,15 +9,15 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
-TOKEN = os.getenv('TOKEN')
+TOKEN = os.getenv("TOKEN")
 
-client = commands.Bot(command_prefix='!')
+client = commands.Bot(command_prefix="!")
 songQueue = []
 songCount = 0
 nameQueue = []
 isActive = False
 
-@client.command(name='remove', help="Removes the given song index from the list.")
+@client.command(name="remove", help="Removes the given song index from the list.")
 async def rm(ctx, index : int):
     global songQueue, nameQueue, songCount
     if index > len(songQueue) or index < 2:
@@ -30,7 +30,7 @@ async def rm(ctx, index : int):
     nameQueue.pop(index - 1)
     os.remove(songName)
 
-@client.command(name='list', help="Shows the current queue of songs.")
+@client.command(name="list", help="Shows the current queue of songs.")
 async def ls(ctx):
     global nameQueue
     if(len(nameQueue) == 0):
@@ -41,19 +41,19 @@ async def ls(ctx):
         result += str(x + 1) + ". " + nameQueue[x] + "\n"
     await ctx.send(result)
 
-@client.command(name='queue', help="Add a song to the end of the queue")
+@client.command(name="queue", help="Add a song to the end of the queue")
 async def queue(ctx, url : str, pos : int=-1):
-    # can't handle playlists safely yet
+    # can"t handle playlists safely yet
     if url.find("playlist") != -1:
         return
     global songQueue
     index = len(songQueue) if pos == -1 else pos
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
+        "format": "bestaudio/best",
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
         }],
     }
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -61,14 +61,14 @@ async def queue(ctx, url : str, pos : int=-1):
     for file in os.listdir("./"):
         if (not file.startswith("_")) and file.endswith(".mp3"):
             global songCount, nameQueue
-            nameQueue.insert(index, (str(file).rpartition('-')[0] + " Queued by: " + str(ctx.author.nick if ctx.author.nick != None else ctx.author.name)))
+            nameQueue.insert(index, (str(file).rpartition("-")[0] + " Queued by: " + str(ctx.author.nick if ctx.author.nick != None else ctx.author.name)))
             os.rename(file, "_song" + str(songCount) + ".mp3")
             songQueue.insert(index, str("_song" + str(songCount) + ".mp3"))
             songCount += 1
             
 
 
-@client.command(name='start', help="Starts playing the queue")
+@client.command(name="start", help="Starts playing the queue")
 async def start(ctx):
     global songQueue, isActive
     if isActive:
@@ -90,7 +90,7 @@ async def start(ctx):
         # print("song played")
     await leave(ctx)
 
-@client.command(name='skip', help="Skips currently playing song")
+@client.command(name="skip", help="Skips currently playing song")
 async def skip(ctx):
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
     voice.stop()
